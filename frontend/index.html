@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Razorpay Recovery Agent Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-badge">Razorpay Agent</span>
+        <h1>Failed Subscription Recovery Dashboard</h1>
+      </div>
+      <nav class="main-nav">
+        <button id="nav-kpi" class="nav-btn active" onclick="navigateTo('kpi')">KPI Dashboard</button>
+        <button id="nav-cases" class="nav-btn" onclick="navigateTo('cases')">Case List</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- VIEW 1: KPI DASHBOARD -->
+    <section id="kpi-view" class="view-section active">
+      <div class="section-header">
+        <h2>System Operational Metrics</h2>
+        <p class="section-desc">Real-time performance indicators and operational metrics from the recovery engine.</p>
+      </div>
+
+      <div class="metrics-grid">
+        <!-- Escalation Rate -->
+        <div class="metric-card">
+          <div class="metric-title">Overall Escalation Rate</div>
+          <div class="metric-value" id="kpi-escalation-rate">--</div>
+          <div class="metric-subtext">Percentage of cases requiring human review or manual handling.</div>
+        </div>
+
+        <!-- Contacts Avoided -->
+        <div class="metric-card">
+          <div class="metric-title">Contacts Avoided</div>
+          <div class="metric-value" id="kpi-contacts-avoided">--</div>
+          <div class="metric-subtext">Cases resolved or escalated with zero customer contact.</div>
+        </div>
+
+        <!-- Avg Contacts per Resolved Case -->
+        <div class="metric-card">
+          <div class="metric-title">Avg Contacts / Resolved Case</div>
+          <div class="metric-value" id="kpi-avg-contacts">--</div>
+          <div class="metric-subtext">Average customer outreach touchpoints for recovered subscriptions.</div>
+        </div>
+
+        <!-- False Decision Count -->
+        <div class="metric-card">
+          <div class="metric-title">False Decision Count</div>
+          <div class="metric-value text-small" id="kpi-false-decisions">--</div>
+          <div class="metric-subtext">Accuracy measurement for agent decisions.</div>
+        </div>
+      </div>
+
+      <!-- Category Recovery Rates -->
+      <div class="card-box margin-top">
+        <div class="card-box-header">
+          <h3>Recovery Rate by Category</h3>
+          <span class="badge info">6 Standard Categories</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Recovery Rate</th>
+                <th>Status / Notes</th>
+              </tr>
+            </thead>
+            <tbody id="kpi-category-rows">
+              <tr><td colspan="3" class="loading-cell">Loading metrics...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="view-action-footer">
+        <button class="primary-btn" onclick="navigateTo('cases')">View Case List &rarr;</button>
+      </div>
+    </section>
+
+    <!-- VIEW 2: CASE LIST -->
+    <section id="cases-view" class="view-section">
+      <div class="section-header">
+        <h2>Recovery Cases</h2>
+        <p class="section-desc">Explore subscription recovery states, filter by status or failure category, and simulate new failure events.</p>
+      </div>
+
+      <!-- Filters & Actions Bar -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="filter-status">Status:</label>
+          <select id="filter-status" onchange="applyFilters()">
+            <option value="">All Statuses</option>
+            <option value="open">open</option>
+            <option value="recovered">recovered</option>
+            <option value="escalated">escalated</option>
+            <option value="stopped">stopped</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-category">Category:</label>
+          <select id="filter-category" onchange="applyFilters()">
+            <option value="">All Categories</option>
+            <option value="card_expired">card_expired</option>
+            <option value="insufficient_funds">insufficient_funds</option>
+            <option value="authentication_failed">authentication_failed</option>
+            <option value="technical_error">technical_error</option>
+            <option value="risk_block">risk_block</option>
+            <option value="unclassified">unclassified</option>
+          </select>
+        </div>
+
+        <button class="secondary-btn" onclick="resetFilters()">Reset Filters</button>
+      </div>
+
+      <!-- Case List Table -->
+      <div class="card-box">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Subscription ID</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Contact Count</th>
+                <th>Last Updated</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="cases-table-body">
+              <tr><td colspan="6" class="loading-cell">Loading cases...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Simulate Event Section -->
+      <div class="card-box margin-top">
+        <div class="card-box-header">
+          <h3>Simulate New Failure Event</h3>
+          <span class="badge secondary">Interactive Demo Tool</span>
+        </div>
+        <form id="simulate-event-form" onsubmit="handleSimulateEvent(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="sim-sub-id">Subscription ID <span class="required">*</span></label>
+              <input type="text" id="sim-sub-id" placeholder="e.g. sub_demo_1001" required>
+            </div>
+
+            <div class="form-group">
+              <label for="sim-event-type">Event Type</label>
+              <input type="text" id="sim-event-type" value="payment.failed" required>
+            </div>
+
+            <div class="form-group">
+              <label for="sim-error-code">Error Code</label>
+              <input type="text" id="sim-error-code" placeholder="e.g. BAD_REQUEST">
+            </div>
+
+            <div class="form-group">
+              <label for="sim-error-reason">Error Reason</label>
+              <input type="text" id="sim-error-reason" placeholder="e.g. payment_failed">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="sim-error-desc">Error Description</label>
+              <input type="text" id="sim-error-desc" placeholder="e.g. Card has expired">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-btn" id="sim-submit-btn">Simulate Event & Process</button>
+            <div id="sim-status-msg" class="status-msg"></div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 3: CASE DETAIL -->
+    <section id="detail-view" class="view-section">
+      <div class="detail-top-nav">
+        <button class="secondary-btn" onclick="navigateTo('cases')">&larr; Back to Case List</button>
+      </div>
+
+      <!-- Case Header Card -->
+      <div class="card-box margin-top-sm">
+        <div class="detail-header" id="detail-header-content">
+          <div class="loading-cell">Loading case details...</div>
+        </div>
+      </div>
+
+      <!-- Human Review Section (Visible only when escalated) -->
+      <div id="human-review-box" class="card-box margin-top escalation-box hidden">
+        <div class="card-box-header">
+          <h3>Human Review Required</h3>
+          <span class="badge warning">Case Escalated</span>
+        </div>
+        <p class="escalation-info">
+          This case has been escalated for manual review. Select an action and provide optional review notes.
+        </p>
+        <form id="human-review-form" onsubmit="handleHumanReview(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="hr-decision">Review Decision <span class="required">*</span></label>
+              <select id="hr-decision" required>
+                <option value="approve">Approve Agent Decision</option>
+                <option value="override">Override Agent Decision</option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label for="hr-note">Review Note / Justification</label>
+              <input type="text" id="hr-note" placeholder="e.g. Verified customer details manually, setting status to recovered">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="primary-btn" id="hr-submit-btn">Submit Human Review</button>
+            <div id="hr-status-msg" class="status-msg"></div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Audit Log Timeline -->
+      <div class="card-box margin-top">
+        <div class="card-box-header">
+          <h3>Audit Log & Execution Timeline</h3>
+          <span class="badge info">Immutable Sequence</span>
+        </div>
+        <div id="timeline-container" class="timeline-container">
+          <div class="loading-cell">Loading timeline...</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Razorpay Failed Subscription Recovery Agent &bull; Read-Mostly Operations Dashboard &bull; Phase 8</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

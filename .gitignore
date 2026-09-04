@@ -1,0 +1,23 @@
+# Environment variables & secrets
+.env
+
+# SQLite Database (regenerable via python scripts/demo_seed.py)
+*.db
+*.sqlite
+*.sqlite3
+db/recovery_agent.db
+
+# Python virtual environment & build artifacts
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# OS & IDE artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
