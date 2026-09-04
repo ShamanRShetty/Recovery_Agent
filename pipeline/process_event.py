@@ -21,8 +21,7 @@ import sqlite3
 import sys
 from datetime import datetime, timezone
 
-# Add project root to sys.path if needed
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 from db.init import get_db_connection
 from classifier.rules import classify_by_rules
@@ -49,6 +48,7 @@ def process_failure_event(failure_event_id: int, conn: sqlite3.Connection = None
         close_conn_on_exit = True
 
     try:
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
         # Fetch failure event record
@@ -66,21 +66,7 @@ def process_failure_event(failure_event_id: int, conn: sqlite3.Connection = None
         if not fe:
             raise ValueError(f"Failure event with ID {failure_event_id} not found.")
 
-        if isinstance(fe, sqlite3.Row):
-            fe_dict = dict(fe)
-        else:
-            fe_dict = {
-                "id": fe[0],
-                "subscription_id": fe[1],
-                "external_event_id": fe[2],
-                "event_type": fe[3],
-                "error_code": fe[4],
-                "error_reason": fe[5],
-                "error_description": fe[6],
-                "error_source": fe[7],
-                "error_step": fe[8],
-                "attempt_number": fe[9]
-            }
+        fe_dict = dict(fe)
 
         sub_id = fe_dict["subscription_id"]
         ext_evt_id = fe_dict["external_event_id"]
@@ -200,7 +186,6 @@ def process_failure_event(failure_event_id: int, conn: sqlite3.Connection = None
             subscription_id=sub_id,
             action_type=action_type,
             category=category,
-            event_type=event_type,
             subscription_status=sub_status
         )
 

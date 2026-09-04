@@ -6,8 +6,11 @@ Application entrypoint exposing the Subscription Recovery Agent API surface,
 including general endpoints and signature-verified Razorpay webhook routes.
 """
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from api.routes import router as api_router
 from api.webhooks import router as webhook_router
@@ -26,10 +29,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-import os
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 
 # Mount frontend static files
 frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")

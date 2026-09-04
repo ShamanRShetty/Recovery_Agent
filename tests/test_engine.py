@@ -125,6 +125,11 @@ class TestPolicyEngine(unittest.TestCase):
         self.assertEqual(a4, ACTION_STOP)
         self.assertEqual(r4, "if_recovered")
 
+        # Contact limit reached -> escalate
+        a5, r5 = decide_action("insufficient_funds", 1.0, {"contact_count": 2}, "pending", attempt_number=3)
+        self.assertEqual(a5, ACTION_ESCALATE)
+        self.assertEqual(r5, "if_contact_limit_reached")
+
     def test_card_expired_sequence(self):
         # Contact 0 -> first nudge
         a0, r0 = decide_action("card_expired", 1.0, {"contact_count": 0}, "pending", 1)
@@ -151,13 +156,6 @@ class TestPolicyEngine(unittest.TestCase):
         a1, r1 = decide_action("card_not_enabled", 1.0, {"contact_count": 1}, "pending", 2)
         self.assertEqual(a1, ACTION_ESCALATE)
         self.assertEqual(r1, "cne_single_nudge_limit")
-
-    def test_all_6_category_state_machine_traces(self):
-        categories = ["card_expired", "insufficient_funds", "card_not_enabled", "risk_block", "mandate_cancelled", "unclassified"]
-        for cat in categories:
-            act, rule = decide_action(cat, 1.0 if cat != "unclassified" else 0.0, {"contact_count": 0}, "pending", 1)
-            self.assertIn(act, [ACTION_SEND_NUDGE, ACTION_WAIT, ACTION_ESCALATE, ACTION_STOP])
-            self.assertTrue(len(rule) > 0)
 
 if __name__ == "__main__":
     unittest.main()

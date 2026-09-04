@@ -3,7 +3,7 @@ Synthetic Dataset Generator for Failed Subscription Recovery Agent (Phase 1)
 =============================================================================
 
 Dataset Design & Scenario Distribution Summary:
-Total failure_events rows: EXACTLY 40 across 23 subscriptions
+Total failure_events rows: EXACTLY 40 across 28 subscriptions
 
 Category Scenario Breakdown:
 - insufficient_funds (8 events across 4 subscriptions):
@@ -103,7 +103,7 @@ def generate_synthetic_data():
     conn.commit()
 
 
-    # 1. Subscriptions Dataset (23 total subscriptions)
+    # 1. Subscriptions Dataset (28 total subscriptions)
     subscriptions_data = [
         # insufficient_funds (4 subs)
         ("sub_synth_ins_1", "cust_ins_101", 49900, "INR", "active"),

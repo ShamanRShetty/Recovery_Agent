@@ -38,5 +38,4 @@ def log_audit_entry(conn, subscription_id, event_summary, actor="system"):
         """,
         (subscription_id, event_summary, actor, now_iso)
     )
-    conn.commit()
     return cursor.lastrowid

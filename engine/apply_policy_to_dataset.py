@@ -108,7 +108,6 @@ def apply_policy_to_dataset():
             subscription_id=sub_id,
             action_type=action_type,
             category=category,
-            event_type=event_type,
             subscription_status=sub_status
         )
 

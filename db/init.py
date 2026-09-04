@@ -42,8 +42,7 @@ def init_db(db_path=None):
     conn.commit()
     conn.close()
     
-    resolved_path = db_path or os.getenv("DB_PATH", DEFAULT_DB_PATH)
-    print(f"Database successfully initialized at: {os.path.abspath(resolved_path)}")
+    print(f"Database successfully initialized at: {os.path.abspath(db_path)}")
 
 if __name__ == "__main__":
     target_path = sys.argv[1] if len(sys.argv) > 1 else None

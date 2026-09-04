@@ -45,9 +45,8 @@ def run_verification():
     # STEP 1: Confirm API status
     # -------------------------------------------------------------------------
     print("\n--- STEP 1: API Boot & Root Endpoint Check ---")
-    status, body = make_request("GET", "/")
-    print(f"HTTP Status: {status}")
-    print(f"Response: {json.dumps(body, indent=2)}")
+    status, _ = make_request("GET", "/")
+    print(f"HTTP Status: {status} (root serves HTML dashboard — expected 200)")
 
     # -------------------------------------------------------------------------
     # STEP 2: POST /simulate/event with new subscription (card_expired)

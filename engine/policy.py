@@ -67,8 +67,7 @@ def decide_action(category, confidence, case_state=None, subscription_status=Non
         
         if attempt_number == 1:
             return (ACTION_WAIT, "if_wait")
-        if attempt_number > 1 and attempt_number < REPEATED_FAILURE_THRESHOLD and sub_status == "pending":
-            return (ACTION_WAIT, "if_wait_continued")
+
         if attempt_number >= REPEATED_FAILURE_THRESHOLD and contact_count == 0 and sub_status == "pending":
             return (ACTION_SEND_NUDGE, "if_courtesy_reminder")
         

@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS actions (
 -- 6. Case State Table
 CREATE TABLE IF NOT EXISTS case_state (
     subscription_id TEXT PRIMARY KEY REFERENCES subscriptions(id),
+    -- contact_count ceiling (2) must match MAX_CONTACTS in config.py and the cap in engine/case_state.py
     contact_count INTEGER NOT NULL DEFAULT 0 CHECK (contact_count >= 0 AND contact_count <= 2),
     status TEXT NOT NULL CHECK (status IN ('open','recovered','escalated','stopped')) DEFAULT 'open',
     last_category TEXT,

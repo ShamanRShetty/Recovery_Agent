@@ -34,6 +34,8 @@ if env_file.exists():
 logger = logging.getLogger("llm_fallback")
 
 # Allowed 6 categories ONLY - Never introduce a 7th
+# NOTE: Includes "unclassified" because the LLM may legitimately return it as a classification.
+# The rule engine's VALID_CATEGORIES in rules.py excludes "unclassified" since rules never produce it.
 VALID_CATEGORIES = {
     "insufficient_funds",
     "card_expired",
@@ -66,6 +68,8 @@ def _call_gemini_api(api_key: str, user_text: str) -> str:
     candidate_models = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.8-flash", "gemini-flash-latest"]
     last_err = None
 
+    # NOTE: Only HTTP 404 (model-not-found) triggers fallback to the next candidate.
+    # All other HTTP errors and exceptions fail fast on the first model.
     for model in candidate_models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         payload = {

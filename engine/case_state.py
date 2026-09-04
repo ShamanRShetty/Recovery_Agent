@@ -54,7 +54,7 @@ def get_or_create_case_state(conn, subscription_id):
         "last_updated": now_iso
     }
 
-def update_case_state(conn, subscription_id, action_type, category, event_type=None, subscription_status=None):
+def update_case_state(conn, subscription_id, action_type, category, subscription_status=None):
     """
     Updates the case_state row after a decision is made.
     
@@ -71,6 +71,7 @@ def update_case_state(conn, subscription_id, action_type, category, event_type=N
     new_status = current_state["status"]
     
     if action_type == "send_nudge":
+        # 2 must match MAX_CONTACTS in config.py and the CHECK constraint in db/schema.sql
         new_contact_count = min(current_state["contact_count"] + 1, 2)
     elif action_type == "escalate":
         new_status = "escalated"

@@ -20,6 +20,9 @@ CATEGORY_RISK_BLOCK = "risk_block"
 CATEGORY_MANDATE_CANCELLED = "mandate_cancelled"
 CATEGORY_UNCLASSIFIED = "unclassified"
 
+# NOTE: Excludes \"unclassified\" because rules never produce it directly —
+# unclassified is only returned as a fallback when zero or multiple categories match.
+# The LLM fallback's VALID_CATEGORIES in llm_fallback.py includes \"unclassified\".
 VALID_CATEGORIES = {
     CATEGORY_INSUFFICIENT_FUNDS,
     CATEGORY_CARD_EXPIRED,
@@ -112,6 +115,12 @@ def classify_by_rules(error_code=None, error_reason=None, error_description=None
         tuple[str, float]: (category, confidence)
         - Single unambiguous rule match: (category, 1.0)
         - Zero matches or contradictory signals: ('unclassified', 0.0)
+
+    Note:
+        Current rule set evaluates only ``error_reason`` and ``error_description``.
+        The remaining arguments (``error_code``, ``error_source``, ``error_step``) are
+        accepted for API symmetry with webhook payloads but are not evaluated in the
+        MVP rule set.
     """
     reason = (error_reason or "").strip().lower()
     desc = (error_description or "").strip().lower() if error_description else None
