@@ -63,13 +63,13 @@ STRICT OUTPUT RULES:
 - "reasoning" MUST be a short string explaining your decision.
 """
 
+import time
+
 def _call_gemini_api(api_key: str, user_text: str) -> str:
-    """Calls Google Gemini REST API across available model endpoints."""
-    candidate_models = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.8-flash", "gemini-flash-latest"]
+    """Calls Google Gemini REST API across available model endpoints with rate-limit retries."""
+    candidate_models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-flash-latest"]
     last_err = None
 
-    # NOTE: Only HTTP 404 (model-not-found) triggers fallback to the next candidate.
-    # All other HTTP errors and exceptions fail fast on the first model.
     for model in candidate_models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         payload = {
@@ -88,21 +88,28 @@ def _call_gemini_api(api_key: str, user_text: str) -> str:
         }
         req_bytes = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(url, data=req_bytes, headers={"Content-Type": "application/json"}, method="POST")
-        try:
-            with urllib.request.urlopen(req, timeout=25) as resp:
-                res_dict = json.loads(resp.read().decode("utf-8"))
-                candidates = res_dict.get("candidates", [])
-                if not candidates:
-                    raise ValueError("Empty response candidates from Gemini API.")
-                return candidates[0]["content"]["parts"][0]["text"]
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
+
+        # Retry loop for 429 / 503 rate limits / transient outages
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    res_dict = json.loads(resp.read().decode("utf-8"))
+                    candidates = res_dict.get("candidates", [])
+                    if not candidates:
+                        raise ValueError("Empty response candidates from Gemini API.")
+                    return candidates[0]["content"]["parts"][0]["text"]
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    last_err = e
+                    break  # Try next candidate model
+                elif e.code in (429, 503) and attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))  # Exponential backoff delay
+                    continue
                 last_err = e
-                continue
-            raise e
-        except Exception as e:
-            last_err = e
-            raise e
+                raise e
+            except Exception as e:
+                last_err = e
+                raise e
 
     if last_err:
         raise last_err

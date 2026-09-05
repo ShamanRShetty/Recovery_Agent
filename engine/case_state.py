@@ -9,6 +9,8 @@ Kept strictly separate from pure policy decision engine (engine/policy.py).
 import sqlite3
 from datetime import datetime, timezone
 
+from config import MAX_CONTACTS
+
 def get_or_create_case_state(conn, subscription_id):
     """
     Fetches the existing case_state record for a subscription_id,
@@ -59,7 +61,7 @@ def update_case_state(conn, subscription_id, action_type, category, subscription
     Updates the case_state row after a decision is made.
     
     State transition rules:
-    - action_type == 'send_nudge': increment contact_count by 1
+    - action_type == 'send_nudge': increment contact_count by 1; if contact_count reaches MAX_CONTACTS, set status = 'escalated'
     - action_type == 'escalate': set status = 'escalated'
     - action_type == 'stop' & subscription_status == 'active': set status = 'recovered'
     - action_type == 'stop' & subscription_status != 'active': set status = 'stopped'
@@ -71,8 +73,9 @@ def update_case_state(conn, subscription_id, action_type, category, subscription
     new_status = current_state["status"]
     
     if action_type == "send_nudge":
-        # 2 must match MAX_CONTACTS in config.py and the CHECK constraint in db/schema.sql
-        new_contact_count = min(current_state["contact_count"] + 1, 2)
+        new_contact_count = min(current_state["contact_count"] + 1, MAX_CONTACTS)
+        if new_contact_count >= MAX_CONTACTS:
+            new_status = "escalated"
     elif action_type == "escalate":
         new_status = "escalated"
     elif action_type == "stop":

@@ -29,6 +29,10 @@ def get_db_connection(db_path=None):
     return conn
 
 def init_db(db_path=None):
+    # Resolve the path right at the beginning so it's never None later
+    if db_path is None:
+        db_path = os.getenv("DB_PATH", DEFAULT_DB_PATH)
+
     conn = get_db_connection(db_path)
     
     if not os.path.exists(SCHEMA_PATH):
@@ -42,6 +46,7 @@ def init_db(db_path=None):
     conn.commit()
     conn.close()
     
+    # This will now safely print the string path instead of throwing a TypeError
     print(f"Database successfully initialized at: {os.path.abspath(db_path)}")
 
 if __name__ == "__main__":

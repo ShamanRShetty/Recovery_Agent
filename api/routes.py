@@ -17,12 +17,18 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from db.init import get_db_connection
 from pipeline.process_event import process_failure_event
-from audit.logger import log_audit_entry
-from classifier.rules import VALID_CATEGORIES
+ALL_CATEGORIES = {
+    "insufficient_funds",
+    "card_expired",
+    "card_not_enabled",
+    "risk_block",
+    "mandate_cancelled",
+    "unclassified"
+}
 
 router = APIRouter()
 
@@ -40,6 +46,14 @@ class SimulateEventRequest(BaseModel):
     error_source: Optional[str] = Field(None, description="Razorpay error source")
     error_step: Optional[str] = Field(None, description="Razorpay error step")
     external_event_id: Optional[str] = Field(None, description="Optional external event ID (generated if omitted)")
+
+    @field_validator("subscription_id")
+    @classmethod
+    def validate_subscription_id(cls, v: str) -> str:
+        cleaned = v.strip()
+        if not cleaned:
+            raise ValueError("Subscription ID cannot be empty or whitespace.")
+        return cleaned
 
 
 class HumanReviewRequest(BaseModel):
@@ -68,8 +82,8 @@ def simulate_event(req: SimulateEventRequest):
         if not cursor.fetchone():
             cursor.execute(
                 """
-                INSERT INTO subscriptions (id, customer_id, plan_amount, currency, status, created_at)
-                VALUES (?, ?, 1000, 'INR', 'active', ?)
+                INSERT OR IGNORE INTO subscriptions (id, customer_id, plan_amount, currency, status, created_at)
+                VALUES (?, ?, 1000, 'INR', 'pending', ?)
                 """,
                 (req.subscription_id, f"cust_sim_{req.subscription_id}", now_iso)
             )
@@ -307,7 +321,7 @@ def get_metrics():
         cat_stats = {row["last_category"]: row for row in cursor.fetchall()}
 
         recovery_rate_by_category = {}
-        for cat in sorted(VALID_CATEGORIES):
+        for cat in sorted(ALL_CATEGORIES):
             if cat in cat_stats:
                 tot = cat_stats[cat]["total"]
                 rec = cat_stats[cat]["recovered"]
@@ -374,10 +388,20 @@ def human_review_case(id: str, req: HumanReviewRequest):
     try:
         cursor = conn.cursor()
 
-        # Verify case exists
+        # Verify case exists and is in escalated status
         cursor.execute("SELECT id FROM subscriptions WHERE id = ?", (id,))
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail=f"Case / Subscription '{id}' not found.")
+
+        cursor.execute("SELECT status, last_category, contact_count FROM case_state WHERE subscription_id = ?", (id,))
+        cs_row = cursor.fetchone()
+        current_status = cs_row[0] if cs_row else "unknown"
+
+        if current_status != "escalated":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Human review is only allowed for cases in 'escalated' status (current status: '{current_status}')."
+            )
 
         # Log audit entry with actor='human'
         decision_clean = req.decision.strip().lower()
@@ -385,9 +409,6 @@ def human_review_case(id: str, req: HumanReviewRequest):
         log_audit_entry(conn, id, audit_narrative, actor="human")
 
         # Update case_state if override specifies explicit status or leave unchanged
-        cursor.execute("SELECT status, last_category, contact_count FROM case_state WHERE subscription_id = ?", (id,))
-        cs_row = cursor.fetchone()
-
         if cs_row:
             current_status = cs_row[0]
             new_status = current_status

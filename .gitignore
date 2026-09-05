@@ -1,5 +1,7 @@
 # Environment variables & secrets
 .env
+.env.local
+.env.*.local
 
 # SQLite Database (regenerable via python scripts/demo_seed.py)
 *.db
@@ -7,17 +9,38 @@
 *.sqlite3
 db/recovery_agent.db
 
+# Scratch / temporary scripts & data
+scratch/
+tmp/
+*.tmp
+*.log
+
 # Python virtual environment & build artifacts
 venv/
 .venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Testing & linting caches
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # OS & IDE artifacts
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 .vscode/
 .idea/
+*.swp
+*.swo

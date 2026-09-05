@@ -27,8 +27,11 @@ def translate_razorpay_payload(payload_json: Dict[str, Any]) -> Dict[str, Any]:
             - error_step (str|None)
             - raw_payload (str)
     """
+    if not isinstance(payload_json, dict):
+        raise ValueError("Malformed webhook payload structure: root JSON must be an object")
+
     event_type = payload_json.get("event", "payment.failed")
-    payload_obj = payload_json.get("payload", {})
+    payload_obj = payload_json.get("payload", {}) if isinstance(payload_json.get("payload"), dict) else {}
 
     payment_entity = payload_obj.get("payment", {}).get("entity", {}) if isinstance(payload_obj.get("payment"), dict) else {}
     sub_entity = payload_obj.get("subscription", {}).get("entity", {}) if isinstance(payload_obj.get("subscription"), dict) else {}

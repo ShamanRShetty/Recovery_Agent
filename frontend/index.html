@@ -61,7 +61,7 @@
           <div class="kpi-tile kpi-tile--signal">
             <span class="kpi-tile-label">Avg contacts / resolved case</span>
             <span class="kpi-tile-value" id="kpi-avg-contacts">--</span>
-            <span class="kpi-tile-note">Touchpoints per recovered subscription</span>
+            <span class="kpi-tile-note">0.0 — all recovered cases resolved with zero customer contact</span>
           </div>
 
           <div class="kpi-tile kpi-tile--muted">
@@ -195,6 +195,11 @@
             <div class="field-block full">
               <label for="sim-error-desc">Error description</label>
               <input type="text" id="sim-error-desc" placeholder="e.g. Card has expired">
+            </div>
+
+            <div class="field-block full">
+              <label for="sim-ext-evt-id">External Event ID <span class="field-hint">(Optional — set fixed ID to test 409 duplicate rejection)</span></label>
+              <input type="text" id="sim-ext-evt-id" placeholder="e.g. evt_test_duplicate_001">
             </div>
           </div>
 

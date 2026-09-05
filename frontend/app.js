@@ -11,7 +11,7 @@ let selectedCaseId = null;
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const CATEGORY_NOTES = {
-  'card_expired': 'Awaiting Razorpay\'s native retry or email link dispatch',
+  'card_expired': 'Automated customer nudges (email/SMS) for card update',
   'insufficient_funds': 'Awaiting Razorpay\'s native retry cycle',
   'card_not_enabled': 'Online/recurring transactions disabled on card',
   'risk_block': 'High risk score — human escalation',
@@ -122,6 +122,10 @@ async function loadKPIs() {
   } catch (err) {
     console.error('Error fetching metrics:', err);
     document.getElementById('kpi-escalation-rate').textContent = 'Error';
+    const avoidedEl = document.getElementById('kpi-contacts-avoided');
+    if (avoidedEl) avoidedEl.textContent = 'Error';
+    const avgContactsEl = document.getElementById('kpi-avg-contacts');
+    if (avgContactsEl) avgContactsEl.textContent = 'Error';
     document.getElementById('kpi-category-list').innerHTML = `<div class="empty-note is-error">Failed to load metrics from server.</div>`;
   }
 }
@@ -178,7 +182,7 @@ async function loadCaseList() {
     cases.forEach(item => {
       const tr = document.createElement('tr');
       const formattedDate = item.last_updated ? formatIsoDate(item.last_updated) : '--';
-      const statusBadge = getStatusBadge(item.status);
+      const statusBadge = getStatusBadge(item.status, item.last_category, item.contact_count);
 
       tr.innerHTML = `
         <td>
@@ -233,6 +237,8 @@ async function handleSimulateEvent(event) {
   const errorCode = document.getElementById('sim-error-code').value.trim() || null;
   const errorReason = document.getElementById('sim-error-reason').value.trim() || null;
   const errorDesc = document.getElementById('sim-error-desc').value.trim() || null;
+  const extEvtIdElem = document.getElementById('sim-ext-evt-id');
+  const externalEventId = extEvtIdElem ? (extEvtIdElem.value.trim() || null) : null;
 
   if (!subId) {
     statusMsg.className = 'status-msg error';
@@ -240,7 +246,10 @@ async function handleSimulateEvent(event) {
     return;
   }
 
-  submitBtn.disabled = true;
+  const formElem = document.getElementById('simulate-event-form');
+  if (formElem) {
+    formElem.querySelectorAll('input, select, button').forEach(el => el.disabled = true);
+  }
   statusMsg.className = 'status-msg';
   statusMsg.textContent = 'Processing event simulation through pipeline...';
 
@@ -250,7 +259,8 @@ async function handleSimulateEvent(event) {
       event_type: eventType,
       error_code: errorCode,
       error_reason: errorReason,
-      error_description: errorDesc
+      error_description: errorDesc,
+      external_event_id: externalEventId
     };
 
     const res = await fetch(`${API_BASE}/simulate/event`, {
@@ -279,7 +289,9 @@ async function handleSimulateEvent(event) {
     statusMsg.className = 'status-msg error';
     statusMsg.textContent = `Simulation failed: ${err.message}`;
   } finally {
-    submitBtn.disabled = false;
+    if (formElem) {
+      formElem.querySelectorAll('input, select, button').forEach(el => el.disabled = false);
+    }
   }
 }
 
@@ -304,8 +316,8 @@ async function loadCaseDetail(caseId) {
     const cs = data.case_state || {};
     const auditLogs = data.audit_log || [];
 
-    const statusBadge = getStatusBadge(cs.status || sub.status || 'unknown');
     const categoryName = cs.last_category || 'unclassified';
+    const statusBadge = getStatusBadge(cs.status || sub.status || 'unknown', categoryName, cs.contact_count);
     const amountStr = `${sub.currency || 'INR'} ${(sub.plan_amount || 0).toLocaleString()}`;
     const subId = sub.id || caseId;
 
@@ -435,7 +447,10 @@ async function handleHumanReview(event) {
   const decision = document.getElementById('hr-decision').value;
   const note = document.getElementById('hr-note').value.trim();
 
-  submitBtn.disabled = true;
+  const hrFormElem = document.getElementById('human-review-form');
+  if (hrFormElem) {
+    hrFormElem.querySelectorAll('input, select, button').forEach(el => el.disabled = true);
+  }
   statusMsg.className = 'status-msg';
   statusMsg.textContent = 'Submitting human review...';
 
@@ -461,7 +476,9 @@ async function handleHumanReview(event) {
     statusMsg.className = 'status-msg error';
     statusMsg.textContent = `Submission failed: ${err.message}`;
   } finally {
-    submitBtn.disabled = false;
+    if (hrFormElem) {
+      hrFormElem.querySelectorAll('input, select, button').forEach(el => el.disabled = false);
+    }
   }
 }
 
@@ -542,8 +559,9 @@ function animateNumber(el, target, { decimals = 0, suffix = '' } = {}) {
 /**
  * Utility Functions
  */
-function getStatusBadge(status) {
+function getStatusBadge(status, category, contactCount = 0) {
   const s = (status || 'unknown').toLowerCase();
+  const cat = (category || '').toLowerCase();
   let modifierClass = 'status--stopped';
   let label = capitalize(s);
 
@@ -553,7 +571,25 @@ function getStatusBadge(status) {
     modifierClass = 'status--escalated';
   } else if (s === 'open') {
     modifierClass = 'status--open';
-    label = 'Open — awaiting native retry';
+    if (cat === 'insufficient_funds') {
+      label = 'Open — awaiting native retry';
+    } else if (cat === 'card_expired') {
+      if (contactCount > 0) {
+        label = `Open — ${contactCount} of 2 nudges sent`;
+      } else {
+        label = 'Open — awaiting customer nudge';
+      }
+    } else if (cat === 'card_not_enabled') {
+      label = contactCount > 0 ? 'Open — customer notified' : 'Open — awaiting customer action';
+    } else if (cat === 'risk_block') {
+      label = 'Open — awaiting risk review';
+    } else if (cat === 'mandate_cancelled') {
+      label = 'Open — mandate cancelled';
+    } else if (cat === 'unclassified') {
+      label = 'Open — pending classification';
+    } else {
+      label = 'Open — awaiting customer response';
+    }
   }
 
   return `<span class="status ${modifierClass}"><span class="status-dot"></span>${escapeHtml(label)}</span>`;

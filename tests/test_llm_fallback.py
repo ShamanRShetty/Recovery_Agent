@@ -152,15 +152,16 @@ class TestGeminiApi404Retry(unittest.TestCase):
         self.assertIn("card_expired", result)
         self.assertEqual(call_count, 2)
 
+    @patch("classifier.llm_fallback.time.sleep")
     @patch("classifier.llm_fallback.urllib.request.urlopen")
-    def test_non_404_http_error_fails_fast(self, mock_urlopen):
-        """HTTP 429 (rate limit) on model 1 should raise immediately without trying model 2."""
+    def test_non_404_http_error_fails_fast(self, mock_urlopen, mock_sleep):
+        """HTTP 429 (rate limit) on model 1 retries 3 times then raises without trying model 2."""
         mock_urlopen.side_effect = HTTPError("http://example.com", 429, "Rate Limited", {}, BytesIO(b""))
 
         with self.assertRaises(HTTPError) as ctx:
             _call_gemini_api("fake_key", "test input")
         self.assertEqual(ctx.exception.code, 429)
-        self.assertEqual(mock_urlopen.call_count, 1)
+        self.assertEqual(mock_urlopen.call_count, 3)
 
     @patch("classifier.llm_fallback.urllib.request.urlopen")
     def test_all_models_404_raises_last_error(self, mock_urlopen):

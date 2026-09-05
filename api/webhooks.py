@@ -84,7 +84,14 @@ async def handle_razorpay_webhook(request: Request):
         )
 
     # 4. Translate Razorpay payload to flat failure_events structure
-    translated = translate_razorpay_payload(payload_json)
+    try:
+        translated = translate_razorpay_payload(payload_json)
+    except ValueError as e:
+        logger.error(f"Malformed webhook payload structure: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"status": "rejected", "detail": str(e)}
+        )
     sub_id = translated["subscription_id"]
 
     # 5. Determine external_event_id from X-Razorpay-Event-Id header
@@ -100,8 +107,8 @@ async def handle_razorpay_webhook(request: Request):
         if not cursor.fetchone():
             cursor.execute(
                 """
-                INSERT INTO subscriptions (id, customer_id, plan_amount, currency, status, created_at)
-                VALUES (?, ?, 1000, 'INR', 'active', ?)
+                INSERT OR IGNORE INTO subscriptions (id, customer_id, plan_amount, currency, status, created_at)
+                VALUES (?, ?, 1000, 'INR', 'pending', ?)
                 """,
                 (sub_id, f"cust_rzp_{sub_id}", now_iso)
             )
