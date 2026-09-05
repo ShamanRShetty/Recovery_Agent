@@ -1,6 +1,6 @@
-# AI-Assisted Failed Subscription Recovery Agent for Razorpay
+# Recoup — AI-Assisted Failed Subscription Recovery Agent for Razorpay
 
-An intelligent, policy-governed recovery agent and operational dashboard for managing Razorpay subscription payment failures. The system automates failure classification using deterministic rules with a safe Google Gemini LLM fallback, enforces strict customer-contact compliance ceilings ($2$ contacts max), logs immutable audit trails, and provides a 3-screen operational dashboard for human review and event simulation.
+**Recoup** is an intelligent, policy-governed recovery agent and operational dashboard for managing Razorpay subscription payment failures. The system automates failure classification using deterministic rules with a safe Google Gemini LLM fallback, enforces strict customer-contact compliance ceilings ($2$ contacts max), logs immutable audit trails, and provides a 3-screen operational dashboard for human review and event simulation.
 
 > **CRITICAL DISCLOSURE & SYSTEM FRAMING**:
 > **This agent classifies failure causes and manages customer-contact/escalation decisions; it does not control or time Razorpay's own retry engine.**

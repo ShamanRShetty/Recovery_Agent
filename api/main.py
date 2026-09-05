@@ -16,7 +16,7 @@ from api.routes import router as api_router
 from api.webhooks import router as webhook_router
 
 app = FastAPI(
-    title="Razorpay Failed Subscription Recovery Agent API",
+    title="Recoup — Razorpay Failed Subscription Recovery Agent API",
     description="AI-assisted backend for failed subscription classification, policy decisions, action execution, and audit logging.",
     version="1.0.0"
 )

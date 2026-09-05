@@ -103,34 +103,36 @@ body {
   gap: 0.7rem;
 }
 
-.brand-mark {
-  width: 34px;
-  height: 34px;
+.brand-logo-img {
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-sm);
-  background: var(--signal);
-  color: var(--on-signal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.05rem;
+  object-fit: cover;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(20, 18, 43, 0.12);
+  border: 1px solid var(--line);
+  transition: transform 0.2s var(--ease);
+}
+
+.brand-logo-img:hover {
+  transform: scale(1.04);
 }
 
 .brand-tag {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 700;
   color: var(--signal);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .brand-name {
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 700;
   color: var(--ink);
-  line-height: 1.2;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .view-nav {
@@ -858,6 +860,20 @@ button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible
   text-align: center;
   font-size: 0.78rem;
   color: var(--ink-faint);
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.footer-logo-img {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  object-fit: cover;
 }
 
 .footer-inner strong { color: var(--ink-soft); font-weight: 600; }
