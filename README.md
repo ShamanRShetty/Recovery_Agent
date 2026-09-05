@@ -69,4 +69,3 @@ For complete architectural details, module maps, and database schemas, see **[`d
 ## Verification & Documentation Links
 
 - **Validation Report**: See **[`docs/validation_report.md`](docs/validation_report.md)** for full pass/fail evidence across all 37 unit/integration tests and documented technical limitations.
-- **Failure Recovery Story**: See **[`docs/failure_story.md`](docs/failure_story.md)** for pitch video defense and candidate build challenges.
